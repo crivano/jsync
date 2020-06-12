@@ -1,81 +1,83 @@
-Project JLogic
+JSync
 ====
-JLogic is a simple open-source library for evaluating boolean expressions in java. It is specifically designed to be used as a business rules framework, and to be able to "explain" why a certain conclusion was reached.
 
-Main goals are:
-- To be fast
-- To be easily readable
-- To provide a String representing the reason why an expression evaluates do true or false
+JSync is a simple open-source library that analyses two sets of POJOs, that may be linked to form graphs, and returns the operations that are necessary to go from the former graph to the latter.
+
+It may seem to be an easy task, but it's not so. Detection of changes require a nesting batch algorithm involving all objects on both graphs. And, the resulting list of operations should be ordered based on the level of dependency of each object.
+
+There are many applications for this kind of synchronization, but the most common is to record changes in a database. For that, the current objects on the database can be provided as the "old" graph and the "new" graph can be filled with the desired outcome. JSync will create a list of operations that may be added to the database to update the graph. In this situation, operations will be executed only if differences are detected.
 
 Example / Usage
 ====
-A basic propositional expression is built out of the types `And`, `Or` and `Not`.  All of these extend the base type Expression.  For example,
+Melhods ```addOld``` and ```addNew``` should be used to populate both graphs with objects. Then, ```sync``` method can be called to produce a list of operations. 
+
+Some annotations may be added to POJOs in order to ignore fields both for the similarity check and for the computing of dependency levels.
+
+
+A complete example can be found among the unit tests:
 
 ```java
-Expression e = And.of(new CanFoo(true),
-		Or.of(new CanFoo2(false), new CanBar2(true)));
-assertTrue(JLogic.eval(e));
-assertEquals("foo _and_ bar2", JLogic.explain(e, true));
-```
-
-Classes CanFoo, CanFoo2 and CanBar2 represent specific business rules, all necessary parameters are provided at the in the constructor. In our simple demo, they receive only one parameter, that states whether they should succeed or fail. Here is the implementation of CanFoo:
-
-```java
-public class CanFoo implements Expression {
+public class Foo implements Synchronizable {
+	@IgnoreForSimilarity
+	Long id;
+	@IgnoreForDependencyLevel
+	List<Bar> bars;
+	boolean a;
 	boolean b;
 
-	public CanFoo(boolean b) {
-		this.b = b;
-	}
-
-	public boolean eval() {
-		return this.b;
-	}
-
-	public String explain(boolean result) {
-		return JLogic.explain("foo", result);
+	public Foo(Long id, List<Bar> bars, boolean changed) {
+		super();
+		this.id = id;
+		this.bars = bars;
+		this.a = changed;
 	}
 }
-```
 
-A false situation and a true one may be expressed different ways. JLogic.explain is a very simple function that prefixes the first parameter with "_not_" when explaining a false result. Of course, you can write your own explanations.
+public class Bar implements Synchronizable {
+	@IgnoreForSimilarity
+	Long id;
+	Foo foo;
+	boolean changed;
 
-```java
-public static String explain(String explanation, boolean result) {
-	if (result)
-		return explanation;
-	else
-		return NOT + explanation;
+	public Bar(Long id, Foo foo, boolean changed) {
+		super();
+		this.id = id;
+		this.foo = foo;
+		this.changed = changed;
+	}
+}
+
+
+@Test
+public void test23FooChanged() {
+	Foo oldFoo1 = new Foo(1L, null, false);
+	Bar oldBar1 = new Bar(1L, oldFoo1, false);
+	Foo newFoo1 = new Foo(1L, null, true);
+	Bar newBar1 = new Bar(1L, newFoo1, false);
+	Bar newBar2 = new Bar(2L, newFoo1, false);
+	
+	Synchronizer sync = new Synchronizer();
+	sync.addOld(oldFoo1);
+	sync.addOld(oldBar1);
+	sync.addNew(newFoo1);
+	sync.addNew(newBar1);
+	sync.addNew(newBar2);
+	
+	List<Operation> l = sync.sync();
+	
+	assertEquals(3, l.size());
+	assertEquals(Operator.UPDATE, l.get(0).getOperator());
+	assertEquals(oldFoo1, l.get(0).getOld());
+	assertEquals(newFoo1, l.get(0).getNew());
+	assertEquals(0, l.get(0).getDependencyLevel());
+	assertEquals(Operator.INSERT, l.get(1).getOperator());
+	assertEquals(newBar2, l.get(1).getNew());
+	assertEquals(newBar2.foo, newFoo1);
+	assertEquals(1, l.get(1).getDependencyLevel());
+	assertEquals(Operator.UPDATE, l.get(2).getOperator());
+	assertEquals(oldBar1, l.get(2).getOld());
+	assertEquals(newBar1, l.get(2).getNew());
+	assertEquals(newBar1.foo, newFoo1);
+	assertEquals(1, l.get(2).getDependencyLevel());
 }
 ```
-
-Building
-====
-
-JLogic is built with Maven.  To build from source,
-
-```bash
-> mvn package
-```
-
-generates a snapshot jar target/jlogic-0.0.1-SNAPSHOT.jar.
-
-To run the test suite locally,
-
-```bash
-> mvn test
-```
-
-Development
-====
-
-JLogic is very much in-development, and is in no way, shape, or form guaranteed to be stable or bug-free.  Bugs, suggestions, or pull requests are all very welcome.
-
-License
-====
-Copyright 2016 Renato Crivano
-
-Licensed under the Apache License, Version 2.0
-
-http://www.apache.org/licenses/LICENSE-2.0
-# jsync

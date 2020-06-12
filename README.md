@@ -1,6 +1,8 @@
 JSync
 ====
 
+![](https://github.com/crivano/jsync/workflows/Java%20CI/badge.svg)
+
 JSync is a simple open-source library that analyses two sets of POJOs, that may be linked to form graphs, and returns the operations that are necessary to go from the former graph to the latter.
 
 It may seem to be an easy task, but it's not so. Detection of changes require a nesting batch algorithm involving all objects on both graphs. And, the resulting list of operations should be ordered based on the level of dependency of each object.

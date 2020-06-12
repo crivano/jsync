@@ -24,13 +24,6 @@ public class Foo implements Synchronizable {
 	List<Bar> bars;
 	boolean a;
 	boolean b;
-
-	public Foo(Long id, List<Bar> bars, boolean changed) {
-		super();
-		this.id = id;
-		this.bars = bars;
-		this.a = changed;
-	}
 }
 
 public class Bar implements Synchronizable {
@@ -38,15 +31,7 @@ public class Bar implements Synchronizable {
 	Long id;
 	Foo foo;
 	boolean changed;
-
-	public Bar(Long id, Foo foo, boolean changed) {
-		super();
-		this.id = id;
-		this.foo = foo;
-		this.changed = changed;
-	}
 }
-
 
 @Test
 public void test23FooChanged() {

@@ -125,7 +125,9 @@ public class Synchronizer {
 				Object o = fld.get(s);
 				if (o != null && o instanceof Synchronizable) {
 					Synchronizable ss = map.get(((Synchronizable) o).getSyncKey());
-					fld.set(s, ss);
+					// Only if the old item exists
+					if (ss != null)
+						fld.set(s, ss);
 				}
 			}
 		} catch (Exception e) {

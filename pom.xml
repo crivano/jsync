@@ -5,7 +5,7 @@
 
 	<groupId>com.crivano</groupId>
 	<artifactId>jsync</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.1</version>
 	<name>JSync</name>
 	<description>Java library to synchronize two sets</description>
 	<packaging>jar</packaging>
